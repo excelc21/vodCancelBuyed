@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+		xmlns:task="http://www.springframework.org/schema/task" 
+		xmlns:context="http://www.springframework.org/schema/context" 
+		xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.2.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+    <context:component-scan base-package="com.wincom.dbsyncagent" />
+    
+    <!-- ########################################################################################## -->
+	<!-- DB #1  -->
+  	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" >
+ 	  	<property name="driverClassName" value="${spring.db.datasource.driver-class-name}" />
+		<property name="url" value="${spring.db.datasource.jdbc-url}" />
+		<property name="username" value="${spring.db.datasource.username}" />
+		<property name="password" value="${spring.db.datasource.password}" />
+		<property name="initialSize" value="5" />
+		<property name="minIdle" value="50" />
+		<property name="maxActive" value="150" />
+		<property name="maxIdle" value="150" />
+		<property name="maxWait" value="200000" />
+		<property name="poolPreparedStatements" value="true" />
+		<property name="validationQuery" value="SELECT 1 FROM dual" />
+		<property name="validationQueryTimeout" value="10" />
+		<property name="testOnBorrow" value="true" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnReturn" value="true" />
+	</bean>
+    
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="typeAliasesPackage" value="com.wincom.dbsyncagent" />
+		<property name="configLocation" value="classpath:sqlmap/dao1/sql-mapper-config.xml" />
+		<property name="mapperLocations" value="classpath:sqlmap/dao1/Db1_SQL.xml" />
+	</bean>
+	
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg ref="sqlSessionFactory" />
+	</bean>
+	
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.wincom.dbsyncagent.tasks.dao1" />
+        <property name="annotationClass" value="org.springframework.stereotype.Repository"/>
+	</bean>
+	
+	<!-- ########################################################################################## -->
+	<!-- DB #2  -->
+<!-- 	<bean id="dataSource2" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" >-->
+<!-- 	  	<property name="driverClassName" value="${spring.db.datasource2.driver-class-name}" />-->
+<!--		<property name="url" value="${spring.db.datasource2.jdbc-url}" />-->
+<!--		<property name="username" value="${spring.db.datasource2.username}" />-->
+<!--		<property name="password" value="${spring.db.datasource2.password}" />-->
+<!--		<property name="initialSize" value="5" />-->
+<!--		<property name="minIdle" value="50" />-->
+<!--		<property name="maxActive" value="150" />-->
+<!--		<property name="maxIdle" value="150" />-->
+<!--		<property name="maxWait" value="200000" />-->
+<!--		<property name="poolPreparedStatements" value="true" />-->
+<!--		<property name="validationQuery" value="SELECT 1 FROM dual" />-->
+<!--		<property name="validationQueryTimeout" value="10" />-->
+<!--		<property name="testOnBorrow" value="true" />-->
+<!--		<property name="testWhileIdle" value="true" />-->
+<!--		<property name="testOnReturn" value="true" />-->
+<!--	</bean>-->
+	
+<!--	<bean id="sqlSessionFactory2" class="org.mybatis.spring.SqlSessionFactoryBean">-->
+<!--		<property name="dataSource" ref="dataSource2" />-->
+<!--		<property name="typeAliasesPackage" value="com.wincom.dbsyncagent" />-->
+<!--		<property name="configLocation" value="classpath:sqlmap/dao2/sql-mapper-config2.xml" />-->
+<!--		<property name="mapperLocations" value="classpath:sqlmap/dao2/Db2_SQL.xml" />-->
+<!--	</bean>-->
+<!--	-->
+<!--	<bean id="sqlSessionTemplate2" class="org.mybatis.spring.SqlSessionTemplate">-->
+<!--		<constructor-arg ref="sqlSessionFactory2" />-->
+<!--	</bean>-->
+	
+<!--     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">-->
+<!--        <property name="basePackage" value="com.wincom.dbsyncagent.tasks.dao2" />-->
+<!--        <property name="annotationClass" value="org.springframework.stereotype.Repository"/>-->
+<!--	</bean>-->
+    
+    <!-- DB Sync task -->
+    <bean id="dbSyncJob" class="com.wincom.dbsyncagent.tasks.dbSyncTask" />
+    <task:scheduled-tasks> 
+        <task:scheduled ref="dbSyncJob" method="executeJob" cron="*/10 * * * * * "/>
+    </task:scheduled-tasks>
+    
+</beans>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wincom.dbsyncagent.tasks.dao1.Db1Mapper">
+	
+	<select id="getDBTime" resultType="java.lang.String">
+		SELECT TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') DBTIME FROM DUAL
+	</select>
+	
+	<select id="vodBuyCancelList" resultType="com.wincom.dbsyncagent.tasks.vo.VodBuyCancelVO">
+        SELECT pvs_sbc_cont_no, pvs_mac_addr, replace(pvs_buy_date,'-','') buy_date, cnts_cd 
+          FROM PVSUSER.XCION_VOD_CANCEL_TBL 
+         WHERE pvs_cancel_date >= to_char(sysdate - 2, 'YYYYMMDD') || '000000'
+           AND NVL(process_flag,'N') = 'N'
+           AND SUBSTR(PVS_MAC_ADDR,1,1) != 'v'
+	</select>
+	
+	<select id="vodBuyList" resultType="com.wincom.dbsyncagent.tasks.vo.VodBuyVO" parameterType="com.wincom.dbsyncagent.tasks.vo.VodBuyCancelVO">
+		SELECT 
+			1 sa_id, 
+			case when regexp_substr(replace(replace(ERROR_MSG, '||', '|Z|'), '|', '^'), '[^^]+', 1,4,'i') is not null then substr(ERROR_MSG,1, length(ERROR_MSG)-2) else ERROR_MSG end ERROR_MSG, 
+			case when ERROR_MSG is null then 'Y' else 'N' end err_msg_null_chk
+		      FROM VODUSER.PT_VO_BUY 
+		     WHERE SA_ID = #{pvs_sbc_cont_no}
+		       AND MAC_ADDR = #{pvs_mac_addr}
+			   AND buy_date = #{buy_date}
+			   AND product_id = #{cnts_cd}
+			   AND nvl(regexp_substr(replace(replace(ERROR_MSG, '||', '|Z|'), '|', '^'), '[^^]+', 1,4,'i'), 'N') IN ('Y', 'N')
+	</select>
+	
+	<update id="updateVodBuy" parameterType="com.wincom.dbsyncagent.tasks.vo.VodBuyCancelVO">
+		UPDATE VODUSER.PT_VO_BUY
+		   SET ERROR_MSG = #{error_msg}
+		 WHERE SA_ID = #{pvs_sbc_cont_no} 
+		   AND MAC_ADDR = #{pvs_mac_addr}
+		   AND buy_date = #{buy_date}
+		   AND product_id = #{cnts_cd}
+	</update>
+	
+	<update id="updateVodCancelTbl" parameterType="com.wincom.dbsyncagent.tasks.vo.VodBuyCancelVO">
+        UPDATE PVSUSER.XCION_VOD_CANCEL_TBL 
+		   SET PROCESS_FLAG = 'Y'
+		 WHERE pvs_sbc_cont_no = #{pvs_sbc_cont_no} 
+		   AND pvs_mac_addr = #{pvs_mac_addr}
+		   AND replace(pvs_buy_date,'-','') = #{buy_date}
+		   AND cnts_cd = #{cnts_cd}
+	</update>	
+</mapper>

@@ -35,7 +35,7 @@ public class IptvBuyCncldConsumer {
      * 메시지 타입이 'test-inserted'인 메시지 구독
      */
     @SneakyThrows
-    @StreamListener(value = "bpas-admin-in")
+    @StreamListener(value = ConsumerChannel.BPAS_ADMIN_IN)
     public void receive(@Header("x-message-type") String messageType, byte[] messages) {
 
             String message = new String(messages, StandardCharsets.UTF_8);
